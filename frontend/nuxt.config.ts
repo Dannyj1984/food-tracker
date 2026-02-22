@@ -86,7 +86,11 @@ export default defineNuxtConfig({
   nitro: {
     routeRules: {
       '/api/**': {
-        proxy: `${process.env.NUXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/**`,
+        // In production (Docker), the backend is available at http://backend:5000
+        // In development, it's usually http://localhost:5000
+        proxy: process.env.NODE_ENV === 'production'
+          ? 'http://backend:5000/api/**'
+          : 'http://localhost:5000/api/**',
       },
     },
   },
