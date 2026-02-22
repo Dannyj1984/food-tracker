@@ -23,12 +23,14 @@ export default defineNuxtConfig({
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap' },
         { rel: 'apple-touch-icon', href: '/pwa-192x192.png' },
+        { rel: 'manifest', href: '/manifest.webmanifest' },
       ],
     },
   },
 
   pwa: {
     registerType: 'autoUpdate',
+    injectRegister: 'auto',
     manifest: {
       name: 'Food Tracker',
       short_name: 'Food Tracker',
@@ -44,7 +46,6 @@ export default defineNuxtConfig({
           src: '/pwa-192x192.png',
           sizes: '192x192',
           type: 'image/png',
-          purpose: 'any',
         },
         {
           src: '/pwa-512x512.png',
