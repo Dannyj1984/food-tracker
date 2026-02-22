@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#13192b"/>
+      <stop offset="100%" stop-color="#0a0e17"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="plateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="192" height="192" rx="42.24" fill="url(#bg)"/>
+
+  <!-- Glow -->
+  <ellipse cx="96" cy="96" rx="88.70400000000001" ry="88.70400000000001" fill="url(#glow)"/>
+
+  <!-- Outer progress ring -->
+  <circle cx="96" cy="96" r="80.64" fill="none"
+    stroke="rgba(99,102,241,0.2)" stroke-width="5.76"/>
+  <!-- Arc ~270deg -->
+  <circle cx="96" cy="96" r="80.64" fill="none"
+    stroke="url(#plateGrad)" stroke-width="6.720000000000001"
+    stroke-linecap="round"
+    stroke-dasharray="395.20732927335024 506.6760631709618"
+    transform="rotate(-225 96 96)"/>
+
+  <!-- Plate -->
+  <circle cx="96" cy="96" r="61.44" fill="rgba(99,102,241,0.15)"
+    stroke="url(#plateGrad)" stroke-width="4.800000000000001"/>
+
+  <!-- Fork (left) -->
+  <g transform="translate(78.72, 61.44)">
+    <!-- Handle -->
+    <rect x="0.96" y="23.04" width="4.800000000000001" height="38.400000000000006"
+      rx="2.3040000000000003" fill="url(#plateGrad)"/>
+    <!-- Tines -->
+    <rect x="-1.92" y="0" width="1.92" height="19.200000000000003" rx="0.96" fill="url(#plateGrad)"/>
+    <rect x="1.344" y="0" width="1.92" height="19.200000000000003" rx="0.96" fill="url(#plateGrad)"/>
+    <rect x="4.800000000000001" y="0" width="1.92" height="19.200000000000003" rx="0.96" fill="url(#plateGrad)"/>
+  </g>
+
+  <!-- Knife (right) -->
+  <g transform="translate(107.52, 61.44)">
+    <rect x="0" y="0" width="4.800000000000001" height="61.44"
+      rx="2.3040000000000003" fill="url(#plateGrad)"/>
+    <!-- Blade curve hint -->
+    <ellipse cx="4.800000000000001" cy="11.52" rx="3.4559999999999995" ry="11.52"
+      fill="rgba(129,140,248,0.5)"/>
+  </g>
+</svg>

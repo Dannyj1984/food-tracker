@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#13192b"/>
+      <stop offset="100%" stop-color="#0a0e17"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="plateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="112.64" fill="url(#bg)"/>
+
+  <!-- Glow -->
+  <ellipse cx="256" cy="256" rx="236.544" ry="236.544" fill="url(#glow)"/>
+
+  <!-- Outer progress ring -->
+  <circle cx="256" cy="256" r="215.04" fill="none"
+    stroke="rgba(99,102,241,0.2)" stroke-width="15.36"/>
+  <!-- Arc ~270deg -->
+  <circle cx="256" cy="256" r="215.04" fill="none"
+    stroke="url(#plateGrad)" stroke-width="17.92"
+    stroke-linecap="round"
+    stroke-dasharray="1053.8862113956006 1351.136168455898"
+    transform="rotate(-225 256 256)"/>
+
+  <!-- Plate -->
+  <circle cx="256" cy="256" r="163.84" fill="rgba(99,102,241,0.15)"
+    stroke="url(#plateGrad)" stroke-width="12.8"/>
+
+  <!-- Fork (left) -->
+  <g transform="translate(209.92000000000002, 163.84)">
+    <!-- Handle -->
+    <rect x="2.56" y="61.44" width="12.8" height="102.4"
+      rx="6.144" fill="url(#plateGrad)"/>
+    <!-- Tines -->
+    <rect x="-5.12" y="0" width="5.12" height="51.2" rx="2.56" fill="url(#plateGrad)"/>
+    <rect x="3.584" y="0" width="5.12" height="51.2" rx="2.56" fill="url(#plateGrad)"/>
+    <rect x="12.8" y="0" width="5.12" height="51.2" rx="2.56" fill="url(#plateGrad)"/>
+  </g>
+
+  <!-- Knife (right) -->
+  <g transform="translate(286.72, 163.84)">
+    <rect x="0" y="0" width="12.8" height="163.84"
+      rx="6.144" fill="url(#plateGrad)"/>
+    <!-- Blade curve hint -->
+    <ellipse cx="12.8" cy="30.72" rx="9.216" ry="30.72"
+      fill="rgba(129,140,248,0.5)"/>
+  </g>
+</svg>

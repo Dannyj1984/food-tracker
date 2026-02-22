@@ -1,0 +1,24 @@
+{
+  "name": "food-tracker-frontend",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev --host 0.0.0.0",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@vite-pwa/nuxt": "^1.1.1",
+    "chart.js": "^4.4.8",
+    "html5-qrcode": "^2.3.8",
+    "nuxt": "^4.3.1",
+    "vue": "^3.5.28",
+    "vue-chartjs": "^5.3.2",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
+  }
+}

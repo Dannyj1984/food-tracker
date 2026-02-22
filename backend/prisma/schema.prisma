@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  name         String   @db.VarChar(100)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  settings     Settings?
+  customFoods  CustomFood[]
+  customMeals  CustomMeal[]
+  foodLogs     FoodLog[]
+  waterLogs    WaterLog[]
+  exerciseLogs ExerciseLog[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  token     String   @unique @db.VarChar(500)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Settings {
+  id                    Int      @id @default(autoincrement())
+  userId                Int      @unique @map("user_id")
+  dailyCalorieTarget    Int      @default(2000) @map("daily_calorie_target")
+  dailyWaterTargetMl    Int      @default(2500) @map("daily_water_target_ml")
+  dailyCaffeineTargetMg Int      @default(400) @map("daily_caffeine_target_mg")
+  weeklyHrZone13Mins    Int      @default(150) @map("weekly_hr_zone13_mins")
+  weeklyHrZone45Mins    Int      @default(40) @map("weekly_hr_zone45_mins")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("settings")
+}
+
+model CustomFood {
+  id                 Int      @id @default(autoincrement())
+  userId             Int      @map("user_id")
+  barcode            String?  @db.VarChar(50)
+  name               String   @db.VarChar(255)
+  brand              String?  @db.VarChar(255)
+  servingSizeG       Decimal  @map("serving_size_g") @db.Decimal(10, 2)
+  caloriesPer100g    Decimal  @map("calories_per_100g") @db.Decimal(10, 2)
+  fatPer100g         Decimal  @map("fat_per_100g") @db.Decimal(10, 2)
+  saturatedFatPer100g Decimal @map("saturated_fat_per_100g") @db.Decimal(10, 2)
+  carbsPer100g       Decimal  @map("carbs_per_100g") @db.Decimal(10, 2)
+  sugarsPer100g      Decimal  @map("sugars_per_100g") @db.Decimal(10, 2)
+  fiberPer100g       Decimal  @map("fiber_per_100g") @db.Decimal(10, 2)
+  proteinPer100g     Decimal  @map("protein_per_100g") @db.Decimal(10, 2)
+  saltPer100g        Decimal  @map("salt_per_100g") @db.Decimal(10, 2)
+  caffeinePer100g    Decimal? @map("caffeine_per_100g") @db.Decimal(10, 2)
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, barcode])
+  @@map("custom_foods")
+}
+
+model CustomMeal {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  name         String   @db.VarChar(255)
+  description  String?  @db.Text
+  servingSizeG Decimal  @map("serving_size_g") @db.Decimal(10, 2)
+  calories     Decimal  @db.Decimal(10, 2)
+  fat          Decimal  @db.Decimal(10, 2)
+  saturatedFat Decimal  @map("saturated_fat") @db.Decimal(10, 2)
+  carbs        Decimal  @db.Decimal(10, 2)
+  sugars       Decimal  @db.Decimal(10, 2)
+  fiber        Decimal  @db.Decimal(10, 2)
+  protein      Decimal  @db.Decimal(10, 2)
+  salt         Decimal  @db.Decimal(10, 2)
+  caffeine     Decimal? @db.Decimal(10, 2)
+  isFavourite  Boolean  @default(false) @map("is_favourite")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("custom_meals")
+}
+
+enum MealType {
+  breakfast
+  lunch
+  dinner
+  snack
+
+  @@map("meal_type")
+}
+
+enum FoodSource {
+  openfoodfacts
+  custom_food
+  custom_meal
+
+  @@map("food_source")
+}
+
+enum ExerciseType {
+  football
+  running
+  walking
+  netball
+  gym
+  swimming
+  other
+
+  @@map("exercise_type")
+}
+
+model FoodLog {
+  id          Int        @id @default(autoincrement())
+  userId      Int        @map("user_id")
+  date        DateTime   @db.Date
+  time        DateTime   @db.Time()
+  mealType    MealType   @map("meal_type")
+  source      FoodSource
+  sourceId    String     @map("source_id") @db.VarChar(255)
+  name        String     @db.VarChar(255)
+  quantityG   Decimal    @map("quantity_g") @db.Decimal(10, 2)
+  calories    Decimal    @db.Decimal(10, 2)
+  fat         Decimal    @db.Decimal(10, 2)
+  saturatedFat Decimal   @map("saturated_fat") @db.Decimal(10, 2)
+  carbs       Decimal    @db.Decimal(10, 2)
+  sugars      Decimal    @db.Decimal(10, 2)
+  fiber       Decimal    @db.Decimal(10, 2)
+  protein     Decimal    @db.Decimal(10, 2)
+  salt        Decimal    @db.Decimal(10, 2)
+  caffeine    Decimal?   @db.Decimal(10, 2)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("food_log")
+}
+
+model WaterLog {
+  id       Int      @id @default(autoincrement())
+  userId   Int      @map("user_id")
+  date     DateTime @db.Date
+  time     DateTime @db.Time()
+  amountMl Int      @map("amount_ml")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("water_log")
+}
+
+model ExerciseLog {
+  id             Int          @id @default(autoincrement())
+  userId         Int          @map("user_id")
+  date           DateTime     @db.Date
+  exerciseType   ExerciseType @map("exercise_type")
+  caloriesBurnt  Int          @map("calories_burnt")
+  hrZone1Seconds Int?         @map("hr_zone1_seconds")
+  hrZone2Seconds Int?         @map("hr_zone2_seconds")
+  hrZone3Seconds Int?         @map("hr_zone3_seconds")
+  hrZone4Seconds Int?         @map("hr_zone4_seconds")
+  hrZone5Seconds Int?         @map("hr_zone5_seconds")
+  notes          String?      @db.VarChar(500)
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("exercise_log")
+}
