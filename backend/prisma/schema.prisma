@@ -21,6 +21,7 @@ model User {
   waterLogs    WaterLog[]
   exerciseLogs ExerciseLog[]
   refreshTokens RefreshToken[]
+  sharedMeals   SharedMealCalendar[]
 
   @@map("users")
 }
@@ -95,6 +96,7 @@ model CustomMeal {
   createdAt    DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  calendarEntries SharedMealCalendar[]
 
   @@map("custom_meals")
 }
@@ -185,4 +187,18 @@ model ExerciseLog {
 
   @@index([userId, date])
   @@map("exercise_log")
+}
+
+model SharedMealCalendar {
+  id           Int      @id @default(autoincrement())
+  date         DateTime @unique @db.Date
+  customMealId Int      @map("custom_meal_id")
+  userId       Int      @map("user_id") // Who set/last updated the meal
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  customMeal CustomMeal @relation(fields: [customMealId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@map("shared_meal_calendar")
 }

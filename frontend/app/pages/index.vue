@@ -160,7 +160,7 @@ const dateStr = computed(() => currentDate.value.toISOString().split('T')[0]);
 const isToday = computed(() => dateStr.value === new Date().toISOString().split('T')[0]);
 
 const formattedDate = computed(() => currentDate.value.toLocaleDateString('en-GB', {
-  weekday: 'long', day: 'numeric', month: 'long'
+  weekday: 'short', day: 'numeric', month: 'short'
 }));
 
 function prevDay() {

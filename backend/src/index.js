@@ -14,6 +14,7 @@ import foodLogRoutes from './routes/foodLog.js';
 import waterLogRoutes from './routes/waterLog.js';
 import exerciseLogRoutes from './routes/exerciseLog.js';
 import settingsRoutes from './routes/settings.js';
+import calendarRoutes from './routes/calendar.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { cleanupOldEntries } from './services/cleanup.js';
 
@@ -84,6 +85,7 @@ app.use('/api/food-log', foodLogRoutes);
 app.use('/api/water-log', waterLogRoutes);
 app.use('/api/exercise-log', exerciseLogRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

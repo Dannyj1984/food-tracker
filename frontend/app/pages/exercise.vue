@@ -104,7 +104,7 @@ const api = useApi();
 const today = new Date().toISOString().split('T')[0];
 
 const formattedDate = new Date().toLocaleDateString('en-GB', {
-    weekday: 'long', day: 'numeric', month: 'long'
+    weekday: 'short', day: 'numeric', month: 'short'
 });
 
 const exerciseTypes = [

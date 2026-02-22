@@ -35,6 +35,9 @@
       <Transition name="menu-slide">
         <div v-if="menuOpen" class="nav-menu-overlay" @click.self="menuOpen = false">
           <div class="nav-menu">
+            <NuxtLink to="/calendar" class="nav-menu-item" @click="menuOpen = false">
+              <span>📅</span><span>Calendar</span>
+            </NuxtLink>
             <NuxtLink to="/custom-meals" class="nav-menu-item" @click="menuOpen = false">
               <span>🍽️</span><span>Meals</span>
             </NuxtLink>
@@ -59,7 +62,7 @@ const auth = useAuth();
 const route = useRoute();
 const menuOpen = ref(false);
 
-const morePaths = ['/custom-meals', '/custom-foods', '/trends', '/settings'];
+const morePaths = ['/calendar', '/custom-meals', '/custom-foods', '/trends', '/settings'];
 const moreActive = computed(() => morePaths.includes(route.path));
 
 // Close menu on route change
