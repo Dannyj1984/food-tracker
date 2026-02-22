@@ -34,7 +34,7 @@ export function useAuth() {
     }
 
     async function login(email: string, password: string): Promise<void> {
-        const response = await fetch(`${config.public.apiUrl}/api/auth/login`, {
+        const response = await fetch(`/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -50,7 +50,7 @@ export function useAuth() {
     }
 
     async function register(email: string, password: string, name: string): Promise<void> {
-        const response = await fetch(`${config.public.apiUrl}/api/auth/register`, {
+        const response = await fetch(`/api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, name }),
@@ -70,7 +70,7 @@ export function useAuth() {
         if (!rt) return false;
 
         try {
-            const response = await fetch(`${config.public.apiUrl}/api/auth/refresh`, {
+            const response = await fetch(`/api/auth/refresh`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refreshToken: rt }),
@@ -93,7 +93,7 @@ export function useAuth() {
     async function logout(): Promise<void> {
         try {
             if (accessToken.value) {
-                await fetch(`${config.public.apiUrl}/api/auth/logout`, {
+                await fetch(`/api/auth/logout`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

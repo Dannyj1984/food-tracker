@@ -17,7 +17,7 @@ export function useApi() {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const url = `${config.public.apiUrl}${path}`;
+        const url = path;
 
         let response = await fetch(url, {
             ...options,
