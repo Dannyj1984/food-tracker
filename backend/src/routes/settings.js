@@ -7,7 +7,7 @@ router.use(authenticate);
 
 const SETTINGS_FIELDS = [
     'dailyCalorieTarget', 'dailyWaterTargetMl', 'dailyCaffeineTargetMg',
-    'weeklyHrZone13Mins', 'weeklyHrZone45Mins',
+    'weeklyHrZone13Mins', 'weeklyHrZone45Mins', 'caffeinePresets',
 ];
 
 function settingsResponse(settings) {

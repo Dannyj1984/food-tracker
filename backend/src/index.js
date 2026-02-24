@@ -22,6 +22,9 @@ const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 
+// trust proxy is required for express-rate-limit to work correctly behind Nginx
+app.set('trust proxy', 1);
+
 // ---------------------------------------------------------------------------
 // Security middleware (OWASP)
 // ---------------------------------------------------------------------------

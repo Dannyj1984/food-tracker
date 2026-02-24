@@ -101,6 +101,7 @@
 
 <script setup>
 const api = useApi();
+const modal = useModal();
 const today = new Date().toISOString().split('T')[0];
 
 const formattedDate = new Date().toLocaleDateString('en-GB', {
@@ -215,6 +216,13 @@ async function logExercise() {
 }
 
 async function deleteEntry(id) {
+    const confirmed = await modal.confirm({
+        title: 'Delete Exercise?',
+        message: 'Are you sure you want to remove this exercise entry from today?'
+    });
+
+    if (!confirmed) return;
+
     try {
         await api.del(`/api/exercise-log/${id}`);
         await fetchData();

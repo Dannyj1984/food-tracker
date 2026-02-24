@@ -46,6 +46,7 @@ model Settings {
   dailyCaffeineTargetMg Int      @default(400) @map("daily_caffeine_target_mg")
   weeklyHrZone13Mins    Int      @default(150) @map("weekly_hr_zone13_mins")
   weeklyHrZone45Mins    Int      @default(40) @map("weekly_hr_zone45_mins")
+  caffeinePresets       Json?    @map("caffeine_presets")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

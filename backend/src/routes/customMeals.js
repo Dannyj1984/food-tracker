@@ -34,7 +34,6 @@ function handleValidation(req, res) {
 router.get('/', async (req, res, next) => {
     try {
         const meals = await req.prisma.customMeal.findMany({
-            where: { userId: req.userId },
             orderBy: [{ isFavourite: 'desc' }, { createdAt: 'desc' }],
         });
         res.json(meals);

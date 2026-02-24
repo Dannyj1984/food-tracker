@@ -10,12 +10,21 @@
     </div>
 
     <div v-else>
+      <div class="search-bar mb-2">
+        <input v-model="search" type="text" placeholder="Search meals..." class="form-input" />
+      </div>
+
       <div v-if="meals.length === 0" class="empty-state">
         <div class="empty-state-icon">🍽️</div>
         <div class="empty-state-text">No custom meals yet. Create one to quickly log your favourite recipes.</div>
       </div>
 
-      <div v-for="meal in meals" :key="meal.id" class="card mb-1">
+      <div v-if="filteredMeals.length === 0 && meals.length > 0" class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <div class="empty-state-text">No meals match your search.</div>
+      </div>
+
+      <div v-for="meal in filteredMeals" :key="meal.id" class="card mb-1">
         <div class="flex justify-between items-center">
           <div>
             <div style="font-weight: 600;">{{ meal.name }}</div>
@@ -157,6 +166,7 @@
 
 <script setup>
 const api = useApi();
+const modal = useModal();
 
 const loading = ref(false);
 const meals = ref([]);
@@ -164,6 +174,7 @@ const showForm = ref(false);
 const editing = ref(null);
 const saving = ref(false);
 const formError = ref('');
+const search = ref('');
 
 const quickAddMeal = ref(null);
 const quickAddServings = ref(1);
@@ -179,6 +190,15 @@ const defaultForm = {
 };
 
 const form = ref({ ...defaultForm });
+
+const filteredMeals = computed(() => {
+  const s = search.value.toLowerCase().trim();
+  if (!s) return meals.value;
+  return meals.value.filter(m =>
+    m.name.toLowerCase().includes(s) ||
+    (m.description && m.description.toLowerCase().includes(s))
+  );
+});
 
 async function fetchMeals() {
   loading.value = true;
@@ -232,7 +252,13 @@ async function saveMeal() {
 }
 
 async function deleteMeal(id) {
-  if (!confirm('Delete this meal?')) return;
+  const confirmed = await modal.confirm({
+    title: 'Delete Meal?',
+    message: 'Are you sure you want to permanently delete this custom meal recipe?'
+  });
+
+  if (!confirmed) return;
+
   try {
     await api.del(`/api/custom-meals/${id}`);
     meals.value = meals.value.filter(m => m.id !== id);

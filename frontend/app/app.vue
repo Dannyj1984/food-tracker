@@ -1,5 +1,6 @@
 <template>
   <div class="app-layout">
+    <Modal />
     <main class="app-main">
       <NuxtPage />
     </main>

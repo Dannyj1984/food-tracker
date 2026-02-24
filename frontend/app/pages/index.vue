@@ -95,8 +95,14 @@
             </div>
             <div class="tracker-target">/ {{ settings.dailyCaffeineTargetMg }}mg</div>
           </div>
+          <div class="tracker-actions">
+            <button class="tracker-quick-btn" @click="showCaffeineModal = true" title="Quick log caffeine">＋</button>
+          </div>
         </div>
       </div>
+
+      <CaffeineModal :is-visible="showCaffeineModal" :presets="settings.caffeinePresets"
+        @close="showCaffeineModal = false" @logged="fetchData" />
 
       <!-- Exercise Summary -->
       <div v-if="exerciseEntries.length > 0" class="card mb-2">
@@ -153,6 +159,7 @@
 
 <script setup>
 const api = useApi();
+const modal = useModal();
 
 // Reactive date
 const currentDate = ref(new Date());
@@ -189,7 +196,8 @@ const entries = ref([]);
 const waterData = ref({ entries: [], totalMl: 0 });
 const exerciseEntries = ref([]);
 const exerciseCalories = ref(0);
-const settings = ref({ dailyCalorieTarget: 2000, dailyWaterTargetMl: 2500, dailyCaffeineTargetMg: 400 });
+const settings = ref({ dailyCalorieTarget: 2000, dailyWaterTargetMl: 2500, dailyCaffeineTargetMg: 400, caffeinePresets: [] });
+const showCaffeineModal = ref(false);
 
 // Drag state
 const dragActive = ref(false);
@@ -414,6 +422,13 @@ async function addWater(amount) {
 }
 
 async function deleteEntry(id) {
+  const confirmed = await modal.confirm({
+    title: 'Remove log entry?',
+    message: 'Are you sure you want to delete this food entry from your log?'
+  });
+
+  if (!confirmed) return;
+
   try {
     await api.del(`/api/food-log/${id}`);
     entries.value = entries.value.filter(e => e.id !== id);

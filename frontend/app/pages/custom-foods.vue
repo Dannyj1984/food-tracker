@@ -119,6 +119,7 @@
 <script setup>
 const api = useApi();
 const route = useRoute();
+const modal = useModal();
 
 const loading = ref(false);
 const foods = ref([]);
@@ -190,7 +191,13 @@ async function saveFood() {
 }
 
 async function deleteFood(id) {
-  if (!confirm('Delete this food?')) return;
+  const confirmed = await modal.confirm({
+    title: 'Delete custom food?',
+    message: 'Are you sure you want to permanently delete this food item? This will not affect existing logs.'
+  });
+
+  if (!confirmed) return;
+
   try {
     await api.del(`/api/custom-foods/${id}`);
     foods.value = foods.value.filter(f => f.id !== id);

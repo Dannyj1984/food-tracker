@@ -58,6 +58,47 @@
           </div>
         </div>
 
+        <!-- Caffeine Presets Management -->
+        <div class="card mb-2">
+          <div class="flex justify-between items-center mb-1">
+            <h2 class="card-title">☕ Caffeine Quick-Add Presets</h2>
+            <button type="button" class="btn btn-sm btn-secondary" @click="addPreset">+ New Drink</button>
+          </div>
+          <p class="text-sm text-muted mb-1">Add your favorite drinks and caffeine content (mg) per size.</p>
+
+          <div v-for="(preset, index) in form.caffeinePresets" :key="index" class="preset-item mb-1">
+            <div class="form-group">
+              <label class="form-label">Drink Name (e.g. Latte)</label>
+              <div class="flex gap-0.5">
+                <input v-model="preset.name" class="form-input" placeholder="Drink name" required />
+                <button type="button" class="btn-icon" style="color: var(--accent-red);"
+                  @click="removePreset(index)">✕</button>
+              </div>
+            </div>
+            <div class="form-row mt-0.5">
+              <div class="form-group">
+                <label class="form-label text-xs">Small (mg)</label>
+                <input v-model.number="preset.small" type="number" class="form-input text-sm" placeholder="S"
+                  inputmode="numeric" min="0" />
+              </div>
+              <div class="form-group">
+                <label class="form-label text-xs">Medium (mg)</label>
+                <input v-model.number="preset.medium" type="number" class="form-input text-sm" placeholder="M"
+                  inputmode="numeric" min="0" />
+              </div>
+              <div class="form-group">
+                <label class="form-label text-xs">Large (mg)</label>
+                <input v-model.number="preset.large" type="number" class="form-input text-sm" placeholder="L"
+                  inputmode="numeric" min="0" />
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!form.caffeinePresets || form.caffeinePresets.length === 0" class="empty-state">
+            No presets added. Define common drinks for quick logging on the dashboard.
+          </div>
+        </div>
+
         <button type="submit" class="btn btn-primary btn-block mb-2" :disabled="saving">
           {{ saving ? 'Saving...' : 'Save Settings' }}
         </button>
@@ -88,7 +129,17 @@ const form = ref({
   dailyCaffeineTargetMg: 400,
   weeklyHrZone13Mins: 150,
   weeklyHrZone45Mins: 40,
+  caffeinePresets: [],
 });
+
+function addPreset() {
+  if (!form.value.caffeinePresets) form.value.caffeinePresets = [];
+  form.value.caffeinePresets.push({ name: '', small: 0, medium: 0, large: 0 });
+}
+
+function removePreset(index) {
+  form.value.caffeinePresets.splice(index, 1);
+}
 
 async function fetchSettings() {
   loading.value = true;

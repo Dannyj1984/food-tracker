@@ -2,27 +2,39 @@
     <div class="calendar-page container">
         <header class="header">
             <div class="calendar-nav">
-                <button class="btn-icon" @click="prevMonth">←</button>
-                <h1>{{ monthName }} {{ currentYear }}</h1>
-                <button class="btn-icon" @click="nextMonth">→</button>
+                <button class="btn-icon" @click="prevWeek">←</button>
+                <div class="nav-title">
+                    <h1>{{ monthName }} {{ currentYear }}</h1>
+                    <span class="week-range">{{ weekRangeText }}</span>
+                </div>
+                <button class="btn-icon" @click="nextWeek">→</button>
             </div>
             <p class="subtitle">Shared Family Evening Meals</p>
         </header>
 
-        <div class="calendar-grid">
-            <div v-for="day in weekDays" :key="day" class="day-header">{{ day }}</div>
-
-            <div v-for="item in calendarDays" :key="item.dateString" class="day-cell" :class="{
-                'curr-month': item.isCurrentMonth,
+        <div class="weekly-list">
+            <div v-for="item in calendarDays" :key="item.dateString" class="day-row" :class="{
                 'is-today': item.isToday,
                 'has-meal': plannedMeals[item.dateString]
             }" @click="openSelectModal(item.dateString)" @dragover.prevent @drop="onDrop($event, item.dateString)">
-                <span class="day-number">{{ item.day }}</span>
+                <div class="day-info">
+                    <span class="day-name">{{ item.dayName }}</span>
+                    <span class="day-date">{{ item.dayNumber }} {{ item.monthName }}</span>
+                </div>
 
-                <div v-if="plannedMeals[item.dateString]" class="meal-indicator" draggable="true"
-                    @dragstart="onDragStart($event, item.dateString)">
-                    <span class="meal-name">{{ plannedMeals[item.dateString].customMeal.name }}</span>
-                    <button class="btn-remove" @click.stop="removeMeal(item.dateString)">×</button>
+                <div class="meal-slot">
+                    <div v-if="plannedMeals[item.dateString]" class="meal-card" draggable="true"
+                        @dragstart="onDragStart($event, item.dateString)">
+                        <div class="meal-content">
+                            <span class="meal-title">{{ plannedMeals[item.dateString].customMeal.name }}</span>
+                            <span class="meal-cals">{{ Math.round(plannedMeals[item.dateString].customMeal.calories) }}
+                                kcal</span>
+                        </div>
+                        <button class="btn-remove" @click.stop="removeMeal(item.dateString)">×</button>
+                    </div>
+                    <div v-else class="meal-placeholder">
+                        Tap to plan dinner...
+                    </div>
                 </div>
             </div>
         </div>
@@ -33,17 +45,17 @@
                 <div class="modal">
                     <div class="modal-header">
                         <h3>Plan Evening Meal</h3>
-                        <button class="btn-close" @click="showModal = false">×</button>
+                        <button style="padding: 5px;" @click="showModal = false">×</button>
                     </div>
-                    <p class="modal-date">{{ selectedDate }}</p>
+                    <p class="modal-date">{{ formattedSelectedDate }}</p>
 
                     <div class="meal-list">
                         <input v-model="search" type="text" placeholder="Search meals..." class="form-input" />
 
                         <div v-for="meal in filteredMeals" :key="meal.id" class="meal-item" @click="selectMeal(meal)">
-                            <div class="meal-info">
-                                <span class="meal-title">{{ meal.name }}</span>
-                                <span class="meal-sub">{{ Math.round(meal.calories) }} kcal</span>
+                            <div class="meal-info-modal">
+                                <span class="meal-title-modal">{{ meal.name }}</span>
+                                <span class="meal-sub-modal">{{ Math.round(meal.calories) }} kcal</span>
                             </div>
                             <span v-if="meal.isFavourite">⭐</span>
                         </div>
@@ -65,10 +77,10 @@ const selectedDate = ref('');
 const search = ref('');
 const customMeals = ref([]);
 const plannedMeals = ref({});
+const modal = useModal();
 
 // Calendar state
 const viewDate = ref(new Date());
-const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const currentMonth = computed(() => viewDate.value.getMonth());
 const currentYear = computed(() => viewDate.value.getFullYear());
@@ -76,40 +88,48 @@ const monthName = computed(() => new Intl.DateTimeFormat('en-GB', { month: 'long
 
 const calendarDays = computed(() => {
     const days = [];
-    const start = new Date(currentYear.value, currentMonth.value, 1);
-    const end = new Date(currentYear.value, currentMonth.value + 1, 0);
+    const curr = new Date(viewDate.value);
 
-    // Pad start to Monday (0=Sun, 1=Mon... 6=Sat)
-    let startPadding = start.getDay();
-    startPadding = startPadding === 0 ? 6 : startPadding - 1; // Convert to Mon-based
+    // Find Sunday of the current week
+    const diff = curr.getDate() - curr.getDay();
+    const sun = new Date(curr.setDate(diff));
+    sun.setHours(0, 0, 0, 0);
 
-    for (let i = startPadding; i > 0; i--) {
-        const d = new Date(currentYear.value, currentMonth.value, 1 - i);
-        days.push({ day: d.getDate(), dateString: formatDate(d), isCurrentMonth: false });
-    }
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(sun);
+        d.setDate(sun.getDate() + i);
 
-    // Current month
-    for (let i = 1; i <= end.getDate(); i++) {
-        const d = new Date(currentYear.value, currentMonth.value, i);
         days.push({
-            day: i,
             dateString: formatDate(d),
-            isCurrentMonth: true,
+            dayName: new Intl.DateTimeFormat('en-GB', { weekday: 'long' }).format(d),
+            dayNumber: d.getDate(),
+            monthName: new Intl.DateTimeFormat('en-GB', { month: 'short' }).format(d),
             isToday: formatDate(d) === formatDate(new Date())
         });
-    }
-
-    // Pad end to fill 42 cells (6 rows)
-    const endPadding = 42 - days.length;
-    for (let i = 1; i <= endPadding; i++) {
-        const d = new Date(currentYear.value, currentMonth.value + 1, i);
-        days.push({ day: d.getDate(), dateString: formatDate(d), isCurrentMonth: false });
     }
 
     return days;
 });
 
-const formatDate = (date) => date.toISOString().split('T')[0];
+const weekRangeText = computed(() => {
+    const start = calendarDays.value[0];
+    const end = calendarDays.value[6];
+    return `${start.dayNumber} ${start.monthName} — ${end.dayNumber} ${end.monthName}`;
+});
+
+const formattedSelectedDate = computed(() => {
+    if (!selectedDate.value) return '';
+    return new Date(selectedDate.value).toLocaleDateString('en-GB', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+    });
+});
+
+const formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 const filteredMeals = computed(() => {
     const s = search.value.toLowerCase();
@@ -117,14 +137,25 @@ const filteredMeals = computed(() => {
 });
 
 // Navigation
-const prevMonth = () => { viewDate.value = new Date(currentYear.value, currentMonth.value - 1, 1); fetchPlannedMeals(); };
-const nextMonth = () => { viewDate.value = new Date(currentYear.value, currentMonth.value + 1, 1); fetchPlannedMeals(); };
+const prevWeek = () => {
+    const d = new Date(viewDate.value);
+    d.setDate(d.getDate() - 7);
+    viewDate.value = d;
+    fetchPlannedMeals();
+};
+
+const nextWeek = () => {
+    const d = new Date(viewDate.value);
+    d.setDate(d.getDate() + 7);
+    viewDate.value = d;
+    fetchPlannedMeals();
+};
 
 // Actions
 const fetchCustomMeals = async () => {
     try {
-        const { data } = await api.get('/custom-meals');
-        customMeals.value = data.value || [];
+        const data = await api.get('/api/custom-meals');
+        customMeals.value = data || [];
     } catch (err) { console.error(err); }
 };
 
@@ -134,9 +165,9 @@ const fetchPlannedMeals = async () => {
     const end = days[days.length - 1].dateString;
 
     try {
-        const { data } = await api.get(`/calendar?start=${start}&end=${end}`);
+        const data = await api.get(`/api/calendar?start=${start}&end=${end}`);
         const meals = {};
-        (data.value || []).forEach(m => {
+        (data || []).forEach(m => {
             meals[m.date.split('T')[0]] = m;
         });
         plannedMeals.value = meals;
@@ -150,19 +181,25 @@ const openSelectModal = (date) => {
 
 const selectMeal = async (meal) => {
     try {
-        const { data } = await api.post('/calendar', {
+        const data = await api.post('/api/calendar', {
             date: selectedDate.value,
             customMealId: meal.id
         });
-        plannedMeals.value[selectedDate.value] = data.value;
+        plannedMeals.value[selectedDate.value] = data;
         showModal.value = false;
     } catch (err) { console.error(err); }
 };
 
 const removeMeal = async (date) => {
-    if (!confirm('Remove this meal?')) return;
+    const confirmed = await modal.confirm({
+        title: 'Remove Meal?',
+        message: 'Are you sure you want to remove this planned dinner?'
+    });
+
+    if (!confirmed) return;
+
     try {
-        await api.delete(`/calendar/${date}`);
+        await api.del(`/api/calendar/${date}`);
         delete plannedMeals.value[date];
     } catch (err) { console.error(err); }
 };
@@ -182,17 +219,17 @@ const onDrop = async (event, targetDate) => {
 
     try {
         // 1. Assign to new date
-        const { data } = await api.post('/calendar', {
+        const data = await api.post('/api/calendar', {
             date: targetDate,
             customMealId: mealEntry.customMealId
         });
 
         // 2. Remove old date
-        await api.delete(`/calendar/${sourceDate}`);
+        await api.del(`/api/calendar/${sourceDate}`);
 
         // 3. Update local state
         delete plannedMeals.value[sourceDate];
-        plannedMeals.value[targetDate] = data.value;
+        plannedMeals.value[targetDate] = data;
     } catch (err) { console.error(err); }
 };
 
@@ -216,108 +253,138 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 2rem;
+    gap: 1.5rem;
+}
+
+.nav-title {
+    min-width: 200px;
 }
 
 .calendar-nav h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     color: var(--text-primary);
-    min-width: 180px;
+    margin: 0;
 }
 
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
-    background: var(--border-glass);
+.week-range {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.2rem;
+}
+
+/* Weekly List Layout */
+.weekly-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.day-row {
+    display: flex;
+    background: var(--bg-card);
     border: 1px solid var(--border-glass);
     border-radius: var(--radius-lg);
     overflow: hidden;
+    min-height: 80px;
+    cursor: pointer;
+    transition: transform var(--transition-fast), border-color var(--transition-fast);
 }
 
-.day-header {
-    background: var(--bg-card);
-    padding: 0.75rem 0.25rem;
+.day-row:hover {
+    border-color: var(--border-focus);
+}
+
+.day-row.is-today {
+    border: 1px solid var(--accent-indigo);
+    box-shadow: 0 0 15px var(--accent-indigo-glow);
+}
+
+.day-info {
+    width: 90px;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid var(--border-glass);
     text-align: center;
-    font-size: 0.75rem;
-    font-weight: 600;
+}
+
+.day-row.is-today .day-info {
+    background: var(--accent-indigo);
+}
+
+.day-row.is-today .day-name,
+.day-row.is-today .day-date {
+    color: white;
+}
+
+.day-name {
+    font-size: 0.8rem;
+    font-weight: 700;
     text-transform: uppercase;
     color: var(--text-secondary);
 }
 
-.day-cell {
-    background: var(--bg-secondary);
-    aspect-ratio: 1 / 1.1;
-    padding: 0.5rem;
-    position: relative;
-    transition: background var(--transition-fast);
-    cursor: pointer;
-    min-height: 80px;
+.day-date {
+    font-size: 0.7rem;
+    color: var(--text-muted);
 }
 
-.day-cell:hover {
-    background: var(--bg-card-hover);
-}
-
-.day-cell.curr-month {
-    background: var(--bg-card);
-}
-
-.day-cell.is-today .day-number {
-    background: var(--accent-indigo);
-    color: white;
-    width: 1.5rem;
-    height: 1.5rem;
+.meal-slot {
+    flex: 1;
+    padding: 0.75rem 1rem;
     display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 50%;
 }
 
-.day-number {
+.meal-placeholder {
     font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-secondary);
+    color: var(--text-muted);
+    font-style: italic;
 }
 
-.day-cell.curr-month .day-number {
-    color: var(--text-primary);
-}
-
-.meal-indicator {
-    margin-top: 0.5rem;
+.meal-card {
+    width: 100%;
     background: var(--accent-indigo-glow);
     border: 1px solid var(--accent-indigo);
-    border-radius: var(--radius-sm);
-    padding: 0.25rem 0.4rem;
-    font-size: 0.7rem;
-    color: var(--accent-indigo);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.8rem;
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    gap: 0.25rem;
-    line-height: 1.2;
+    align-items: center;
+    color: var(--accent-indigo);
 }
 
-.meal-name {
-    word-break: break-word;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
+.meal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.meal-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-clamp: 1;
+    -webkit-line-clamp: 1;
+}
+
+.meal-cals {
+    font-size: 0.75rem;
+    opacity: 0.8;
 }
 
 .btn-remove {
     background: none;
     border: none;
     color: inherit;
-    font-size: 1rem;
+    font-size: 1.25rem;
     line-height: 1;
-    padding: 0;
+    padding: 0.2rem;
     cursor: pointer;
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
 .btn-remove:hover {
@@ -383,18 +450,18 @@ onMounted(() => {
     background: var(--bg-card-hover);
 }
 
-.meal-info {
+.meal-info-modal {
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
 }
 
-.meal-title {
+.meal-title-modal {
     font-weight: 500;
     font-size: 0.95rem;
 }
 
-.meal-sub {
+.meal-sub-modal {
     font-size: 0.8rem;
     color: var(--text-secondary);
 }
