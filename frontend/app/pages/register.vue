@@ -9,55 +9,26 @@
       <form @submit.prevent="handleRegister">
         <div class="form-group">
           <label class="form-label" for="name">Name</label>
-          <input
-            id="name"
-            v-model="name"
-            type="text"
-            class="form-input"
-            placeholder="Your name"
-            required
-            autocomplete="name"
-          />
+          <input id="name" v-model="name" type="text" class="form-input" placeholder="Your name" required
+            autocomplete="name" />
         </div>
 
         <div class="form-group">
           <label class="form-label" for="email">Email</label>
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            class="form-input"
-            placeholder="you@example.com"
-            required
-            autocomplete="email"
-          />
+          <input id="email" v-model="email" type="email" class="form-input" placeholder="you@example.com" required
+            autocomplete="email" />
         </div>
 
         <div class="form-group">
           <label class="form-label" for="password">Password</label>
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            class="form-input"
-            placeholder="Min 8 chars, upper + lower + number"
-            required
-            autocomplete="new-password"
-            minlength="8"
-          />
+          <input id="password" v-model="password" type="password" class="form-input"
+            placeholder="Min 8 chars, upper + lower + number" required autocomplete="new-password" minlength="8" />
         </div>
 
         <div class="form-group">
           <label class="form-label" for="confirmPassword">Confirm Password</label>
-          <input
-            id="confirmPassword"
-            v-model="confirmPassword"
-            type="password"
-            class="form-input"
-            placeholder="••••••••"
-            required
-            autocomplete="new-password"
-          />
+          <input id="confirmPassword" v-model="confirmPassword" type="password" class="form-input"
+            placeholder="••••••••" required autocomplete="new-password" />
         </div>
 
         <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
@@ -85,8 +56,8 @@ const error = ref('');
 const loading = ref(false);
 
 async function handleRegister() {
-  error.value = '';
-
+  error.value = 'Sorry, we are in beta and not currently registering new users. If you are interesting the beta version. contact dannyjebbdev@gmail.com';
+  return;
   if (password.value !== confirmPassword.value) {
     error.value = 'Passwords do not match.';
     return;
