@@ -62,6 +62,55 @@ router.get('/', [
     } catch (err) { next(err); }
 });
 
+// GET /api/food-log/recent?days=7
+// Returns deduplicated recent food items (most-recent occurrence of each unique food).
+// Derives per-100g values from stored totals so items can be re-logged at any quantity.
+router.get('/recent', [
+    query('days').optional().isInt({ min: 1, max: 30 }),
+], async (req, res, next) => {
+    try {
+        if (handleValidation(req, res)) return;
+
+        const days = parseInt(req.query.days) || 7;
+        const since = new Date();
+        since.setDate(since.getDate() - days);
+
+        const entries = await req.prisma.foodLog.findMany({
+            where: { userId: req.userId, date: { gte: since } },
+            orderBy: [{ date: 'desc' }, { time: 'desc' }],
+        });
+
+        // Deduplicate: keep the most recent entry per unique food (by source + sourceId)
+        const seen = new Set();
+        const unique = [];
+        for (const e of entries) {
+            const key = `${e.source}::${e.sourceId}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                const qty = Number(e.quantityG) || 100;
+                unique.push({
+                    name: e.name,
+                    source: e.source,
+                    sourceId: e.sourceId,
+                    lastDate: e.date,
+                    servingSizeG: qty,
+                    caloriesPer100g: Math.round((Number(e.calories) / qty) * 100 * 10) / 10,
+                    fatPer100g: Math.round((Number(e.fat) / qty) * 100 * 100) / 100,
+                    saturatedFatPer100g: Math.round((Number(e.saturatedFat) / qty) * 100 * 100) / 100,
+                    carbsPer100g: Math.round((Number(e.carbs) / qty) * 100 * 100) / 100,
+                    sugarsPer100g: Math.round((Number(e.sugars) / qty) * 100 * 100) / 100,
+                    fiberPer100g: Math.round((Number(e.fiber) / qty) * 100 * 100) / 100,
+                    proteinPer100g: Math.round((Number(e.protein) / qty) * 100 * 100) / 100,
+                    saltPer100g: Math.round((Number(e.salt) / qty) * 100 * 100) / 100,
+                    caffeinePer100g: e.caffeine ? Math.round((Number(e.caffeine) / qty) * 100 * 100) / 100 : null,
+                });
+            }
+        }
+
+        res.json(unique);
+    } catch (err) { next(err); }
+});
+
 // GET /api/food-log/summary?days=30
 router.get('/summary', [
     query('days').optional().isInt({ min: 1, max: 90 }),

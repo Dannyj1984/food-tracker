@@ -4,15 +4,32 @@
       <h1 class="page-title">Add Food</h1>
     </div>
 
-    <!-- Scanner -->
+    <!-- Scanner + Search -->
     <div v-if="!scannedFood" class="card mb-2">
       <div id="barcode-scanner" class="scanner-container"></div>
       <div class="form-group mt-1">
-        <label class="form-label">Or enter barcode manually</label>
+        <label class="form-label">Search by name or scan / enter barcode</label>
         <div style="display: flex; gap: 0.5rem;">
-          <input v-model="manualBarcode" type="text" class="form-input" placeholder="e.g. 5060292302201"
-            inputmode="numeric" @keyup.enter="lookupManual" />
-          <button class="btn btn-primary" @click="lookupManual" :disabled="lookupLoading">Go</button>
+          <input v-model="searchQuery" type="text" class="form-input" placeholder="e.g. banana or 5060292302201"
+            @keyup.enter="searchFood" />
+          <button class="btn btn-primary" @click="searchFood" :disabled="lookupLoading">Go</button>
+        </div>
+      </div>
+
+      <!-- Search Results -->
+      <div v-if="searchResults.length > 0" class="search-results mt-1">
+        <div class="text-sm text-muted mb-1" style="padding: 0 0.1rem;">{{ searchResults.length }} results — tap to
+          select</div>
+        <div v-for="(result, i) in searchResults" :key="i" class="search-result-row" @click="selectResult(result)">
+          <div class="search-result-info">
+            <div class="search-result-name">{{ result.food.name }}</div>
+            <div class="search-result-meta">
+              <span v-if="result.food.brand" class="search-result-brand">{{ result.food.brand }} · </span>
+              {{ result.food.caloriesPer100g }} kcal · P{{ result.food.proteinPer100g }}g C{{ result.food.carbsPer100g
+              }}g F{{ result.food.fatPer100g }}g
+            </div>
+          </div>
+          <span class="search-result-chevron">›</span>
         </div>
       </div>
     </div>
@@ -26,13 +43,13 @@
     <div v-if="notFound" class="card mb-2">
       <div class="empty-state">
         <div class="empty-state-icon">🔍</div>
-        <div class="empty-state-text">Barcode <strong>{{ lastScannedCode }}</strong> not found</div>
+        <div class="empty-state-text">"<strong>{{ lastSearchTerm }}</strong>" not found</div>
       </div>
       <button class="btn btn-primary btn-block mt-1" @click="goToCustomAdd">
         Add food manually
       </button>
       <button class="btn btn-secondary btn-block mt-1" @click="resetScanner">
-        Scan again
+        Search again
       </button>
     </div>
 
@@ -109,56 +126,120 @@
         </button>
 
         <button type="button" class="btn btn-secondary btn-block mt-1" @click="resetScanner">
-          Scan another
+          Search again
         </button>
       </form>
     </div>
 
-    <!-- Custom Meals Section -->
+    <!-- Recent Items -->
     <div class="card mb-2">
-      <h2 class="card-title mb-1">🍽️ My Meals</h2>
-
-      <div v-if="mealsLoading" class="loading-center">
-        <div class="spinner"></div>
+      <div class="section-toggle" @click="recentExpanded = !recentExpanded">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <span>🕐 Recent Items</span>
+          <span v-if="recentItems.length > 0" class="count-badge">{{ recentItems.length }}</span>
+        </div>
+        <span class="toggle-chevron" :class="{ open: recentExpanded }">›</span>
       </div>
 
-      <div v-else-if="customMeals.length === 0" class="empty-state" style="padding: 1rem 0;">
-        <div class="text-sm text-muted">No custom meals yet</div>
-        <NuxtLink to="/custom-meals" class="btn btn-secondary mt-1" style="font-size: 0.75rem;">Create one</NuxtLink>
-      </div>
-
-      <div v-else class="custom-meals-list">
-        <div v-for="meal in customMeals" :key="meal.id" class="custom-meal-row">
-          <div class="fav-container">
-            <button class="fav-btn" style="font-size: 25px" :class="{ active: meal.isFavourite }"
-              @click="toggleFav(meal, $event)" title="Toggle favourite">
-              {{ meal.isFavourite ? '❤️' : '🤍' }}
-            </button>
+      <Transition name="section-expand">
+        <div v-if="recentExpanded" class="recent-list">
+          <div v-if="recentLoading" class="loading-center" style="padding: 0.75rem 0;">
+            <div class="spinner"></div>
           </div>
-
-          <div class="custom-meal-info" @click="showMealMenu(meal)">
-            <div class="custom-meal-name">{{ meal.name }}</div>
-            <div class="custom-meal-meta">
-              {{ Number(meal.servingSizeG) }}g · {{ Math.round(Number(meal.calories)) }} kcal ·
-              P{{ Math.round(Number(meal.protein)) }} C{{ Math.round(Number(meal.carbs)) }} F{{
-                Math.round(Number(meal.fat)) }}
-            </div>
+          <div v-else-if="recentItems.length === 0" class="empty-state" style="padding: 0.75rem 0;">
+            <div class="text-sm text-muted">No items logged in the last 7 days</div>
           </div>
-
-          <div class="quick-add-wrapper">
-            <button class="quick-add-btn" @click="showMealMenu(meal)" title="Quick add">＋</button>
-            <div v-if="menuMealId === meal.id" class="meal-type-menu">
-              <button v-for="mt in mealTypeOptions" :key="mt.key" class="meal-type-option"
-                @click="quickAddMeal(meal, mt.key)">
-                <span>{{ mt.icon }}</span> {{ mt.label }}
-              </button>
+          <div v-else>
+            <div v-for="(item, i) in recentItems" :key="i" class="recent-row">
+              <div class="recent-info" @click="selectRecentItem(item)">
+                <div class="recent-name">{{ item.name }}</div>
+                <div class="recent-meta">
+                  {{ item.caloriesPer100g }} kcal · P{{ item.proteinPer100g }}g C{{ item.carbsPer100g }}g F{{
+                    item.fatPer100g }}g
+                </div>
+              </div>
+              <div class="quick-add-wrapper">
+                <button class="quick-add-btn" @click.stop="showRecentMenu(i, $event)" title="Quick add">＋</button>
+              </div>
             </div>
+            <div v-if="recentAddSuccess" class="alert alert-success mt-1">{{ recentAddSuccess }}</div>
           </div>
         </div>
+      </Transition>
+    </div>
+
+    <!-- Recent meal-type menu (Teleported to body so it escapes all stacking contexts) -->
+    <Teleport to="body">
+      <div v-if="recentMenuIdx !== null" class="recent-floating-menu"
+        :style="{ top: recentMenuPos.y + 'px', left: recentMenuPos.x + 'px' }" @click.stop>
+        <button v-for="mt in mealTypeOptions" :key="mt.key" class="meal-type-option"
+          @click="quickAddRecent(recentItems[recentMenuIdx], mt.key)">
+          <span>{{ mt.icon }}</span> {{ mt.label }}
+        </button>
+      </div>
+    </Teleport>
+
+    <!-- Custom Meals Section -->
+    <div class="card mb-2">
+      <div class="section-toggle" @click="mealsExpanded = !mealsExpanded">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <span>🍽️ My Meals</span>
+          <span v-if="customMeals.length > 0" class="count-badge">{{ customMeals.length }}</span>
+        </div>
+        <span class="toggle-chevron" :class="{ open: mealsExpanded }">›</span>
       </div>
 
-      <div v-if="mealAddSuccess" class="alert alert-success mt-1">{{ mealAddSuccess }}</div>
+      <Transition name="section-expand">
+        <div v-if="mealsExpanded">
+          <div v-if="mealsLoading" class="loading-center" style="padding: 0.75rem 0;">
+            <div class="spinner"></div>
+          </div>
+
+          <div v-else-if="customMeals.length === 0" class="empty-state" style="padding: 0.75rem 0;">
+            <div class="text-sm text-muted">No custom meals yet</div>
+            <NuxtLink to="/custom-meals" class="btn btn-secondary mt-1" style="font-size: 0.75rem;">Create one
+            </NuxtLink>
+          </div>
+
+          <div v-else class="custom-meals-list">
+            <div v-for="meal in customMeals" :key="meal.id" class="custom-meal-row">
+              <div class="fav-container">
+                <button class="fav-btn" style="font-size: 25px" :class="{ active: meal.isFavourite }"
+                  @click="toggleFav(meal, $event)" title="Toggle favourite">
+                  {{ meal.isFavourite ? '❤️' : '🤍' }}
+                </button>
+              </div>
+
+              <div class="custom-meal-info" @click="showMealMenu(meal, $event)">
+                <div class="custom-meal-name">{{ meal.name }}</div>
+                <div class="custom-meal-meta">
+                  {{ Number(meal.servingSizeG) }}g · {{ Math.round(Number(meal.calories)) }} kcal ·
+                  P{{ Math.round(Number(meal.protein)) }} C{{ Math.round(Number(meal.carbs)) }} F{{
+                    Math.round(Number(meal.fat)) }}
+                </div>
+              </div>
+
+              <div class="quick-add-wrapper">
+                <button class="quick-add-btn" @click.stop="showMealMenu(meal, $event)" title="Quick add">＋</button>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="mealAddSuccess" class="alert alert-success mt-1">{{ mealAddSuccess }}</div>
+        </div>
+      </Transition>
     </div>
+
+    <!-- My Meals meal-type menu (Teleported to body — smart flip positioning) -->
+    <Teleport to="body">
+      <div v-if="menuMealId !== null" class="recent-floating-menu"
+        :style="{ top: mealMenuPos.y + 'px', left: mealMenuPos.x + 'px' }" @click.stop>
+        <button v-for="mt in mealTypeOptions" :key="mt.key" class="meal-type-option"
+          @click="quickAddMeal(mealMenuActiveMeal, mt.key)">
+          <span>{{ mt.icon }}</span> {{ mt.label }}
+        </button>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -166,8 +247,10 @@
 const api = useApi();
 const route = useRoute();
 
-const manualBarcode = ref('');
+const searchQuery = ref('');
+const lastSearchTerm = ref('');
 const lastScannedCode = ref('');
+const searchResults = ref([]);
 const scannedFood = ref(null);
 const scannedSource = ref('');
 const notFound = ref(false);
@@ -177,6 +260,14 @@ const mealType = ref(route.query.meal || 'snack');
 const addLoading = ref(false);
 const addError = ref('');
 const addSuccess = ref(false);
+
+// Recent items
+const recentItems = ref([]);
+const recentLoading = ref(false);
+const recentExpanded = ref(false);
+const recentMenuIdx = ref(null);
+const recentMenuPos = ref({ x: 0, y: 0 });
+const recentAddSuccess = ref('');
 
 // Meal type context menu
 const menuMealId = ref(null);
@@ -190,6 +281,7 @@ const mealTypeOptions = [
 // Custom meals
 const customMeals = ref([]);
 const mealsLoading = ref(true);
+const mealsExpanded = ref(false);
 const mealAddSuccess = ref('');
 
 let scanner = null;
@@ -198,13 +290,15 @@ function calcNutrient(per100g) {
   return Math.round((Number(per100g) * quantity.value / 100) * 10) / 10;
 }
 
-async function lookupBarcode(code) {
+async function doBarcodeLookup(code) {
   lookupLoading.value = true;
   scannedFood.value = null;
   notFound.value = false;
+  searchResults.value = [];
   addSuccess.value = false;
   addError.value = '';
   lastScannedCode.value = code;
+  lastSearchTerm.value = code;
 
   try {
     const result = await api.get(`/api/foods/barcode/${code}`);
@@ -224,11 +318,48 @@ async function lookupBarcode(code) {
   }
 }
 
-function lookupManual() {
-  const code = manualBarcode.value.trim();
-  if (code && /^\d{4,20}$/.test(code)) {
-    lookupBarcode(code);
+async function searchFood() {
+  const q = searchQuery.value.trim();
+  if (!q) return;
+
+  // Pure barcode — digits only, 4-20 chars
+  if (/^\d{4,20}$/.test(q)) {
+    return doBarcodeLookup(q);
   }
+
+  // Text search
+  lookupLoading.value = true;
+  notFound.value = false;
+  scannedFood.value = null;
+  searchResults.value = [];
+  addError.value = '';
+  lastSearchTerm.value = q;
+
+  try {
+    const results = await api.get(`/api/foods/search?q=${encodeURIComponent(q)}`);
+    if (results.length === 0) {
+      notFound.value = true;
+      stopScanner();
+    } else {
+      searchResults.value = results;
+    }
+  } catch (err) {
+    addError.value = err.message;
+  } finally {
+    lookupLoading.value = false;
+  }
+}
+
+function selectResult(result) {
+  scannedFood.value = result.food;
+  scannedSource.value = result.source;
+  quantity.value = result.food.servingSizeG || 100;
+  searchResults.value = [];
+  stopScanner();
+}
+
+function lookupManual() {
+  searchFood();
 }
 
 async function addToLog() {
@@ -264,6 +395,88 @@ async function addToLog() {
     addError.value = err.message;
   } finally {
     addLoading.value = false;
+  }
+}
+
+// Recent items
+async function fetchRecentItems() {
+  recentLoading.value = true;
+  try {
+    recentItems.value = await api.get('/api/food-log/recent?days=7');
+  } catch (err) {
+    console.error('Failed to load recent items:', err);
+  } finally {
+    recentLoading.value = false;
+  }
+}
+
+function showRecentMenu(idx, event) {
+  if (recentMenuIdx.value === idx) {
+    recentMenuIdx.value = null;
+    return;
+  }
+  // Position the teleported menu below the button
+  const rect = event.currentTarget.getBoundingClientRect();
+  const menuWidth = 150;
+  recentMenuPos.value = {
+    x: Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8),
+    y: rect.bottom + 6,
+  };
+  recentMenuIdx.value = idx;
+}
+
+function selectRecentItem(item) {
+  scannedFood.value = {
+    barcode: item.sourceId,
+    name: item.name,
+    brand: null,
+    servingSizeG: item.servingSizeG,
+    caloriesPer100g: item.caloriesPer100g,
+    fatPer100g: item.fatPer100g,
+    saturatedFatPer100g: item.saturatedFatPer100g,
+    carbsPer100g: item.carbsPer100g,
+    sugarsPer100g: item.sugarsPer100g,
+    fiberPer100g: item.fiberPer100g,
+    proteinPer100g: item.proteinPer100g,
+    saltPer100g: item.saltPer100g,
+    caffeinePer100g: item.caffeinePer100g,
+  };
+  scannedSource.value = item.source;
+  quantity.value = item.servingSizeG || 100;
+  recentExpanded.value = false;
+  stopScanner();
+}
+
+async function quickAddRecent(item, type) {
+  recentMenuIdx.value = null;
+  const now = new Date();
+  const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const qty = item.servingSizeG || 100;
+  const calc = (per100g) => Math.round((Number(per100g) * qty / 100) * 10) / 10;
+
+  try {
+    await api.post('/api/food-log', {
+      date: now.toISOString().split('T')[0],
+      time,
+      mealType: type,
+      source: item.source,
+      sourceId: item.sourceId,
+      name: item.name,
+      quantityG: qty,
+      calories: calc(item.caloriesPer100g),
+      fat: calc(item.fatPer100g),
+      saturatedFat: calc(item.saturatedFatPer100g),
+      carbs: calc(item.carbsPer100g),
+      sugars: calc(item.sugarsPer100g),
+      fiber: calc(item.fiberPer100g),
+      protein: calc(item.proteinPer100g),
+      salt: calc(item.saltPer100g),
+      caffeine: item.caffeinePer100g ? calc(item.caffeinePer100g) : null,
+    });
+    recentAddSuccess.value = `${item.name} added to ${type}! ✓`;
+    setTimeout(() => { recentAddSuccess.value = ''; }, 3000);
+  } catch (err) {
+    console.error('Failed to quick-add recent item:', err);
   }
 }
 
@@ -327,8 +540,28 @@ async function toggleFav(meal, event) {
   }
 }
 
-function showMealMenu(meal) {
-  menuMealId.value = menuMealId.value === meal.id ? null : meal.id;
+const mealMenuActiveMeal = ref(null);
+const mealMenuPos = ref({ x: 0, y: 0 });
+
+function showMealMenu(meal, event) {
+  if (menuMealId.value === meal.id) {
+    menuMealId.value = null;
+    mealMenuActiveMeal.value = null;
+    return;
+  }
+  const MENU_HEIGHT = 186; // 4 options * ~40px + padding
+  const MENU_WIDTH = 150;
+  const rect = event.currentTarget.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const y = spaceBelow < MENU_HEIGHT + 10
+    ? rect.top - MENU_HEIGHT - 6   // flip above
+    : rect.bottom + 6;             // open below
+  mealMenuPos.value = {
+    x: Math.min(rect.right - MENU_WIDTH, window.innerWidth - MENU_WIDTH - 8),
+    y,
+  };
+  mealMenuActiveMeal.value = meal;
+  menuMealId.value = meal.id;
 }
 
 function closeMealMenu() {
@@ -368,7 +601,7 @@ async function quickAddMeal(meal, type) {
 }
 
 function goToCustomAdd() {
-  navigateTo(`/custom-foods?barcode=${lastScannedCode.value}`);
+  navigateTo(`/custom-foods`);
 }
 
 function stopScanner() {
@@ -381,7 +614,8 @@ function stopScanner() {
 function resetScanner() {
   scannedFood.value = null;
   notFound.value = false;
-  manualBarcode.value = '';
+  searchQuery.value = '';
+  searchResults.value = [];
   addSuccess.value = false;
   addError.value = '';
   nextTick(() => initScanner());
@@ -398,7 +632,7 @@ async function initScanner() {
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 250, height: 150 } },
       (decodedText) => {
-        lookupBarcode(decodedText);
+        doBarcodeLookup(decodedText);
       },
       () => { } // ignore errors during scanning
     );
@@ -408,14 +642,19 @@ async function initScanner() {
 }
 
 function onClickOutside(e) {
-  if (menuMealId.value && !e.target.closest('.quick-add-wrapper')) {
+  if (menuMealId.value && !e.target.closest('.recent-floating-menu')) {
     menuMealId.value = null;
+    mealMenuActiveMeal.value = null;
+  }
+  if (recentMenuIdx.value !== null && !e.target.closest('.recent-floating-menu')) {
+    recentMenuIdx.value = null;
   }
 }
 
 onMounted(() => {
   initScanner();
   fetchMeals();
+  fetchRecentItems();
   document.addEventListener('click', onClickOutside);
 });
 
@@ -426,6 +665,167 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ---- Recent Items ---- */
+.section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.1rem 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.section-toggle:hover {
+  color: var(--accent-indigo);
+}
+
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-indigo-glow);
+  color: var(--accent-indigo);
+  border: 1px solid var(--accent-indigo);
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+}
+
+.toggle-chevron {
+  font-size: 1.3rem;
+  color: var(--text-muted);
+  transition: transform 0.25s ease;
+  display: inline-block;
+}
+
+.toggle-chevron.open {
+  transform: rotate(90deg);
+}
+
+.recent-list {
+  overflow: visible;
+}
+
+
+.recent-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.recent-row:last-child {
+  border-bottom: none;
+}
+
+.recent-info {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.recent-info:hover .recent-name {
+  color: var(--accent-indigo);
+}
+
+.recent-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color var(--transition-fast);
+}
+
+.recent-meta {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 0.1rem;
+}
+
+/* Expand / collapse transition */
+.section-expand-enter-active,
+.section-expand-leave-active {
+  transition: opacity 0.2s ease, max-height 0.3s ease;
+  max-height: 600px;
+  overflow: hidden;
+  /* only clip during the animation itself */
+}
+
+.section-expand-enter-from,
+.section-expand-leave-to {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+}
+
+/* ---- Existing styles below ---- */
+.search-results {
+  border-top: 1px solid var(--border-glass);
+  padding-top: 0.5rem;
+}
+
+.search-result-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.25rem;
+  border-bottom: 1px solid var(--border-glass);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  border-radius: var(--radius-md);
+}
+
+.search-result-row:last-child {
+  border-bottom: none;
+}
+
+.search-result-row:hover,
+.search-result-row:active {
+  background: var(--bg-glass);
+}
+
+.search-result-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-result-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-result-meta {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 0.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-result-brand {
+  color: var(--accent-indigo);
+}
+
+.search-result-chevron {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
 .custom-meals-list {
   display: flex;
   flex-direction: column;
@@ -556,6 +956,45 @@ onUnmounted(() => {
 }
 
 .meal-type-option:hover {
+  background: var(--bg-glass, rgba(255, 255, 255, 0.05));
+}
+</style>
+
+<!-- Global: teleported menu lives outside the scoped DOM tree -->
+<style>
+.recent-floating-menu {
+  position: fixed;
+  z-index: 9999;
+  background: var(--bg-card, #1e1e2e);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg, 12px);
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 150px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  animation: menuFadeIn 0.15s ease-out;
+}
+
+.recent-floating-menu .meal-type-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  border-radius: var(--radius-md, 8px);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+  width: 100%;
+  text-align: left;
+}
+
+.recent-floating-menu .meal-type-option:hover {
   background: var(--bg-glass, rgba(255, 255, 255, 0.05));
 }
 </style>

@@ -47,7 +47,7 @@ router.get('/:id', idParam, async (req, res, next) => {
         const id = parseInt(req.params.id);
 
         const meal = await req.prisma.customMeal.findFirst({
-            where: { id, userId: req.userId },
+            where: { id },
         });
         if (!meal) return res.status(404).json({ error: 'Meal not found.' });
 
@@ -88,7 +88,7 @@ router.put('/:id', [...idParam, ...mealValidation], async (req, res, next) => {
         const id = parseInt(req.params.id);
 
         const existing = await req.prisma.customMeal.findFirst({
-            where: { id, userId: req.userId },
+            where: { id },
         });
         if (!existing) return res.status(404).json({ error: 'Meal not found.' });
 
@@ -135,7 +135,7 @@ router.patch('/:id/favourite', idParam, async (req, res, next) => {
         const id = parseInt(req.params.id);
 
         const existing = await req.prisma.customMeal.findFirst({
-            where: { id, userId: req.userId },
+            where: { id },
         });
         if (!existing) return res.status(404).json({ error: 'Meal not found.' });
 
