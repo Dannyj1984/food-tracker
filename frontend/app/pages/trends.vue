@@ -50,7 +50,7 @@
       <!-- Caffeine Chart -->
       <div class="card mb-2">
         <div class="card-title mb-1">Caffeine (mg)</div>
-        <div v-if="hasData" style="height: 200px;">
+        <div v-if="hasCaffeineData" style="height: 200px;">
           <Line :data="caffeineChartData" :options="chartOptions" />
         </div>
         <div v-else class="empty-state">
@@ -77,10 +77,12 @@ const days = ref(30);
 const loading = ref(false);
 const foodSummary = ref([]);
 const waterSummary = ref([]);
+const caffeineSummary = ref([]);
 const settings = ref({ dailyCalorieTarget: 2000, dailyWaterTargetMl: 2500, dailyCaffeineTargetMg: 400 });
 
 const hasData = computed(() => foodSummary.value.length > 0);
 const hasWaterData = computed(() => waterSummary.value.length > 0);
+const hasCaffeineData = computed(() => caffeineSummary.value.length > 0);
 
 const chartOptions = {
   responsive: true,
@@ -155,19 +157,24 @@ const waterChartData = computed(() => ({
   ],
 }));
 
+const caffeineLabels = computed(() => caffeineSummary.value.map(d => {
+  const date = new Date(d.date);
+  return `${date.getDate()}/${date.getMonth() + 1}`;
+}));
+
 const caffeineChartData = computed(() => ({
-  labels: labels.value,
+  labels: caffeineLabels.value,
   datasets: [
     {
       label: 'Caffeine',
-      data: foodSummary.value.map(d => d.caffeine),
+      data: caffeineSummary.value.map(d => d.totalMg),
       borderColor: '#06b6d4',
       backgroundColor: 'rgba(6, 182, 212, 0.1)',
       fill: true,
     },
     {
       label: 'Limit',
-      data: foodSummary.value.map(() => settings.value.dailyCaffeineTargetMg),
+      data: caffeineSummary.value.map(() => settings.value.dailyCaffeineTargetMg),
       borderColor: 'rgba(239, 68, 68, 0.5)',
       borderDash: [5, 5],
       pointRadius: 0,
@@ -178,13 +185,15 @@ const caffeineChartData = computed(() => ({
 async function fetchData() {
   loading.value = true;
   try {
-    const [food, water, s] = await Promise.all([
+    const [food, water, caffeine, s] = await Promise.all([
       api.get(`/api/food-log/summary?days=${days.value}`),
       api.get(`/api/water-log/summary?days=${days.value}`),
+      api.get(`/api/caffeine-log/summary?days=${days.value}`),
       api.get('/api/settings'),
     ]);
     foodSummary.value = food;
     waterSummary.value = water;
+    caffeineSummary.value = caffeine;
     settings.value = s;
   } catch (err) {
     console.error(err);

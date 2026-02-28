@@ -194,6 +194,7 @@ const loading = ref(false);
 const loadError = ref(false);
 const entries = ref([]);
 const waterData = ref({ entries: [], totalMl: 0 });
+const caffeineData = ref({ entries: [], totalMg: 0 });
 const exerciseEntries = ref([]);
 const exerciseCalories = ref(0);
 const settings = ref({ dailyCalorieTarget: 2000, dailyWaterTargetMl: 2500, dailyCaffeineTargetMg: 400, caffeinePresets: [] });
@@ -226,7 +227,7 @@ const totalProtein = computed(() => Math.round(entries.value.reduce((s, e) => s 
 const totalCarbs = computed(() => Math.round(entries.value.reduce((s, e) => s + Number(e.carbs), 0)));
 const totalFat = computed(() => Math.round(entries.value.reduce((s, e) => s + Number(e.fat), 0)));
 const totalFiber = computed(() => Math.round(entries.value.reduce((s, e) => s + Number(e.fiber), 0)));
-const totalCaffeine = computed(() => Math.round(entries.value.reduce((s, e) => s + Number(e.caffeine || 0), 0)));
+const totalCaffeine = computed(() => caffeineData.value.totalMg);
 const waterTotal = computed(() => waterData.value.totalMl);
 
 const caloriePercent = computed(() => (netCalories.value / settings.value.dailyCalorieTarget) * 100);
@@ -392,12 +393,14 @@ async function fetchData() {
     const data = Promise.all([
       api.get(`/api/food-log?date=${dateStr.value}`),
       api.get(`/api/water-log?date=${dateStr.value}`),
+      api.get(`/api/caffeine-log?date=${dateStr.value}`),
       api.get('/api/settings'),
       api.get(`/api/exercise-log?date=${dateStr.value}`),
     ]);
-    const [logData, water, settingsData, exerciseData] = await Promise.race([data, timeout]);
+    const [logData, water, caffeine, settingsData, exerciseData] = await Promise.race([data, timeout]);
     entries.value = logData;
     waterData.value = water;
+    caffeineData.value = caffeine;
     settings.value = settingsData;
     exerciseEntries.value = exerciseData.entries;
     exerciseCalories.value = exerciseData.totalCaloriesBurnt;

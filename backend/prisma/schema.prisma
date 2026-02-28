@@ -14,12 +14,13 @@ model User {
   name         String   @db.VarChar(100)
   createdAt    DateTime @default(now()) @map("created_at")
 
-  settings     Settings?
-  customFoods  CustomFood[]
-  customMeals  CustomMeal[]
-  foodLogs     FoodLog[]
-  waterLogs    WaterLog[]
-  exerciseLogs ExerciseLog[]
+  settings      Settings?
+  customFoods   CustomFood[]
+  customMeals   CustomMeal[]
+  foodLogs      FoodLog[]
+  waterLogs     WaterLog[]
+  caffeineLogs  CaffeineLog[]
+  exerciseLogs  ExerciseLog[]
   refreshTokens RefreshToken[]
   sharedMeals   SharedMealCalendar[]
 
@@ -168,6 +169,19 @@ model WaterLog {
 
   @@index([userId, date])
   @@map("water_log")
+}
+
+model CaffeineLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  date      DateTime @db.Date
+  time      DateTime @db.Time()
+  amountMg  Int      @map("amount_mg")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("caffeine_log")
 }
 
 model ExerciseLog {

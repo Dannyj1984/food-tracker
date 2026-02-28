@@ -81,31 +81,14 @@ const logCaffeine = async (preset, size) => {
     const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
     try {
-        await api.post('/api/food-log', {
+        await api.post('/api/caffeine-log', {
             date,
             time,
-            mealType: 'snack',
-            source: 'custom_food', // We use custom_food source for simplicity in UI tracking
-            sourceId: 'caffeine_preset',
-            name: `${preset.name} (${size.charAt(0).toUpperCase()})`,
-            quantityG: 0,
-            calories: 0,
-            fat: 0,
-            saturatedFat: 0,
-            carbs: 0,
-            sugars: 0,
-            fiber: 0,
-            protein: 0,
-            salt: 0,
-            caffeine: amount,
+            amountMg: Math.round(amount),
         });
 
-        success.value = true;
         emit('logged');
-
-        setTimeout(() => {
-            close();
-        }, 1000);
+        emit('close');
     } catch (err) {
         error.value = err.message || 'Failed to log caffeine';
     } finally {
